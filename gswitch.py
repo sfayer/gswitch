@@ -17,7 +17,7 @@
 # Copyright 2013, High Energy Physics, Imperial College
 #
 """ gSwitch - A python based identity switching utility.
-    Version 1.0.1
+    Version 1.0.2a (development version)
 """
 
 import os
