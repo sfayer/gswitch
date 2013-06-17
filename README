@@ -1,0 +1,111 @@
+gSwitch Readme
+--------------
+
+gSwitch is an identity switching utility which uses sudo to provide the
+ultimate user switch. This avoids running any "grid" code setuid, which may be
+more desirable for sites who prefer NFS software areas. gSwitch is GPLv3
+licensed, see COPYING for details.
+
+** This tool is provided with no warranty what-so-ever, implied or otherwise. **
+
+
+Preamble & Warnings
+-------------------
+
+As there is no authentication between gSwitch and sudo, the pilot account may
+switch to any target account (within the same VO) by calling sudo directly. This
+is a direct limitation caused by the design (and simplicity) of this tool.
+
+Despite the above limitation, security of the pilot proxy is still ensured (as
+a user switch is completed) and traceability is maintained: Switches are logged
+by the Argus server when gSwitch is used, should sudo be called directly, a
+tamper-proof sudo log is still written (assuming sudo has been set-up as
+directed below). These logs can be used together to always ensure that an end
+DN is responsible for a given set of processes.
+
+Only minimal checks are done on the target proxy. The private and public key are
+tested to ensure they match, the rest of the verification is left for the Argus
+server to process.
+
+
+Sudo Configuration
+------------------
+
+Having a working sudo configuration is integral to making gSwitch work. An
+example sudo config is as follows:
+
+--- <example sudoers> ---
+
+# Default options
+
+# Set the new users home directory.
+Defaults always_set_home
+
+# Keep groups, this is only needed if the batch system uses tracking groups.
+Defaults preserve_groups
+
+# Don't reset the environment, used to keep software dir envs, etc...
+Defaults !env_reset
+
+# No point in printing the normal sudo lecture
+Defaults lecture=never
+
+# Log to a non-syslog file so that the user can't send fake messages
+Defaults logfile=/var/log/sudo.log
+
+# This sets up the pilot accounts and target accounts for the VOs
+# It is recommended to have a completely discrete set of accounts for gswitch.
+# Although this will depend on whether you have a independent argus server.
+# If you use the same accounts elsewhere (say a CE) this means the pilot
+# account can potentially access proxies from those as well...
+User_Alias  VO1_PILOTS  = vo1plt001, vo1plt002, vo1plt003
+Runas_Alias VO1_TARGETS = vo1tgt001, vo1tgt002, vo1tgt003
+User_Alias  VO2_PILOTS  = vo2plt001, vo2plt002, vo2plt003
+Runas_Alias VO2_TARGETS = vo2tgt001, vo2tgt002, vo2tgt003
+
+# Let the VOs pilot accounts switch to the target accounts without passwd
+VO1_PILOTS ALL=(VO1_TARGET) NOPASSWD: ALL
+VO2_PILOTS ALL=(VO2_TARGET) NOPASSWD: ALL
+
+# This line is in the default sudoers file and may be required for some things
+# I.e. init scripts which mistakenly use sudo.
+root    ALL=(ALL)       ALL
+
+--- </example sudoers> ---
+
+Once this configuration is installed, you should be able to sudo directly
+between a pilot account and a user account for the same VO without a password.
+You should not be able to sudo from a target account to anywhere else, if you
+can then please reconsider your configuration. The sudoers file needs
+installing on all worker nodes through via some unspecified method (ideally a
+configuration management system).
+
+
+Installation
+------------
+
+The installation of gSwitch itself should be fairly straight forward, on RHEL you
+need the following packages installed, they can all be found in the base repos.
+
+- sudo
+- openssl
+- python
+- python-pycurl
+
+
+All you need to do is set the Argus servers and CA certificates path at the top
+of the script, mark it as executable and put it somewhere on the PATH. You can
+also create a symlink to it if you want to start it with a different name. Once
+the installation is complete, you should test that things work correctly; if
+there are problems, try running in debug mode (-d). By running the commands
+printed in debug mode manually, you can determine whether the problem is with
+sudo or gSwitch.
+
+
+Bugs
+----
+
+There are certainly many bugs. Please send any bug reports to sf105@ic.ac.uk
+with a subject starting "gSwitch Bug", remembering to include as much detail as
+possible.
+
