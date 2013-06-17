@@ -44,7 +44,9 @@ Defaults always_set_home
 # Keep groups, this is only needed if the batch system uses tracking groups.
 Defaults preserve_groups
 
-# Don't reset the environment, used to keep software dir envs, etc...
+# Don't reset the environment, used to keep software dir envs, etc...  Note
+# that this may keep your "pilot" group for the payload, you should check
+# whether this causes you any security problems if you decide to use it.
 Defaults !env_reset
 
 # No point in printing the normal sudo lecture
