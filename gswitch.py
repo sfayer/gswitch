@@ -17,8 +17,9 @@
 # Copyright 2013, High Energy Physics, Imperial College
 #
 """ gSwitch - A python based identity switching utility.
-    Version 1.0.2a (development version)
 """
+
+GS_VERSION = "1.0.2a (development version)"
 
 import os
 import sys
@@ -349,7 +350,7 @@ class GSUtil:
             'ID=`mktemp %s` && cat >> "${ID}" && echo "${ID}"' % proxy_templ
           ]
     if debug:
-      print cmd
+      sys.stderr.write("%s\n" % cmd)
       return "/tmp/fake.debug.proxy.name"
     p = Popen(cmd, stdin = PIPE, stdout = PIPE, stderr = PIPE)
     p.stdin.write(proxy_data)
@@ -373,7 +374,7 @@ class GSUtil:
       cmd += [ '-b' ]
     cmd += [ '--' ] + exec_args
     if debug:
-      print cmd
+      sys.stderr.write("%s\n" % cmd)
       return 0
     p = Popen(cmd)
     p.communicate()
@@ -436,14 +437,20 @@ class GSArgus:
           last_error = str(err)
     raise Exception("All attempts exhausted, last error: %s" % last_error)
 
+def print_version():
+  """ Print just the version information and exit. """
+  print "gSwitch v" + GS_VERSION
+  sys.exit(0)
+
 def print_help():
   """ Print the program usage information and exit. """
   print "gSwitch -- An identity switching utility."
+  print "Version: gSwitch v" + GS_VERSION
   print "Usage: gSwitch [options] <command> [args...]"
   print ""
   print "Option meanings:"
   print "  -h / --help       -- Show this text."
-  print "  -v / --version    -- Show this text."
+  print "  -v / --version    -- Show version information."
   print "  -V / --defines    -- Show config information."
   print "  -b / --background -- Run command in background."
   print "  -d / --debug      -- Only print what would be run."
@@ -464,12 +471,14 @@ if __name__ == '__main__':
     optlist, args = getopt.getopt(sys.argv[1:], 'hvVbd',
                       ['help', 'version', 'defines', 'background', 'debug'])
   except getopt.GetoptError, err:
-    print str(err)
+    sys.stderr.write("%s\n" % str(err))
     print_help()
 
   for opt in optlist:
-    if opt[0] in ("-h", "--help", "-v", "--version"):
+    if opt[0] in ("-h", "--help"):
       print_help()
+    if opt[0] in ("-v", "--version"):
+      print_version()
     if opt[0] in ("-V", "--defines"):
       print_defines()
     if opt[0] in ("-b", "--background"):
@@ -480,20 +489,21 @@ if __name__ == '__main__':
   # Catch any errors further down the stack
   try:
     if len(args) < 1:
-      print "You must specify a payload command to run."
+      sys.stderr.write("You must specify a payload command to run.\n")
       sys.exit(GSConsts.ERROR_CLIENT)
 
     ## Before doing anything further, check the blocked user list
     if os.getlogin() in GS_BLOCKED_USERS:
-      print "You are not allowed to run this executable."
+      sys.stderr.write("You are not allowed to run this executable.\n")
       sys.exit(GSConsts.ERROR_AUTH)
 
     ## First check that we have our required environment variables
     if not "X509_USER_PROXY" in os.environ:
-      print "X509_USER_PROXY must be set to the pilot proxy."
+      sys.stderr.write("X509_USER_PROXY must be set to the pilot proxy.\n")
       sys.exit(GSConsts.ERROR_CLIENT)
     if not "GLEXEC_CLIENT_CERT" in os.environ:
-      print "GLEXEC_CLIENT_CERT must be set to the target user proxy."
+      sys.stderr.write("GLEXEC_CLIENT_CERT must be set to the " \
+                       "target user proxy.\n")
       sys.exit(GSConsts.ERROR_CLIENT)
     pilot_proxy = os.path.abspath(os.environ["X509_USER_PROXY"])
     target_proxy = os.path.abspath(os.environ["GLEXEC_CLIENT_CERT"])
@@ -510,18 +520,19 @@ if __name__ == '__main__':
   
     # Now check that we can access all of the files we're going to use
     if not os.access(pilot_proxy, os.R_OK):
-      print "Cannot read X509_USER_PROXY '%s'." % pilot_proxy
+      sys.stderr.write("Cannot read X509_USER_PROXY '%s'.\n" % pilot_proxy)
       sys.exit(GSConsts.ERROR_CLIENT)
     if not os.access(target_proxy, os.R_OK):
-      print "Cannot read GLEXEC_CLIENT_CERT '%s'." % target_proxy
+      sys.stderr.write("Cannot read GLEXEC_CLIENT_CERT '%s'.\n" % target_proxy)
       sys.exit(GSConsts.ERROR_CLIENT)
     if not os.access(job_src_proxy, os.R_OK):
-      print "Cannot read GLEXEC_SOURCE_PROXY '%s'." % job_src_proxy
+      sys.stderr.write("Cannot read GLEXEC_SOURCE_PROXY '%s'.\n" \
+                         % job_src_proxy)
       sys.exit(GSConsts.ERROR_CLIENT)
 
     # First we check the client proxy we have seems ok
     if not GSUtil.check_cert(target_proxy):
-      print "Target proxy failed the consistency check."
+      sys.stderr.write("Target proxy failed the consistency check.\n")
       sys.exit(GSConsts.ERROR_AUTH)
 
     # Now we have the parameters, we can start by mapping the user
@@ -533,7 +544,7 @@ if __name__ == '__main__':
                               pilot_proxy,
                               GS_DEF_CAPATH)
     if not target_name:
-      print "Authentication failed."
+      sys.stderr.write("Authentication failed.\n")
       sys.exit(GSConsts.ERROR_AUTH)
 
     # We now have a user name, so we can attempt to copy the proxy
@@ -568,6 +579,6 @@ if __name__ == '__main__':
     # Exit silently on sys.exit()
     raise
   except Exception, err:
-    print "gSwitch error: %s" % str(err)
+    sys.stderr.write("gSwitch error: %s\n" % str(err))
     sys.exit(GSConsts.ERROR_CLIENT)
 
