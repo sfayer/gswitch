@@ -1,6 +1,7 @@
 v1.0.1 - Not yet released
- - No changes yet!
+ - Minor fixes in the documentation.
+ - New GS_BLOCKED_USERS setting to ignore requests from certain accounts.
 
 v1.0.0 - 15/06/2013
- - Initial release
+ - Initial release.
 

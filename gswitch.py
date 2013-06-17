@@ -17,7 +17,7 @@
 # Copyright 2013, High Energy Physics, Imperial College
 #
 """ gSwitch - A python based identity switching utility.
-    Version 1.0.1a (development version)
+    Version 1.0.1
 """
 
 import os
@@ -44,6 +44,11 @@ GS_DEF_PROXY = "/tmp/x509up_p%d.gswitch.XXXXXX" % os.getpid()
 GS_DEF_RES = "http://authz-interop.org/xacml/resource/resource-type/wn"
 # The default action (you probably don't need to change this either)
 GS_DEF_ACTION = "http://glite.org/xacml/action/execute"
+# Users to reject immediately, i.e. = [ "user_a", "user_b" ]
+# Note that the blocking is only advisory... They could easily circumvent it.
+# This is mainly for users who insist on running this script, but who aren't
+# in the sudoers file.
+GS_BLOCKED_USERS = [ ]
 
 
 class GSConsts:
@@ -477,6 +482,11 @@ if __name__ == '__main__':
     if len(args) < 1:
       print "You must specify a payload command to run."
       sys.exit(GSConsts.ERROR_CLIENT)
+
+    ## Before doing anything further, check the blocked user list
+    if os.getlogin() in GS_BLOCKED_USERS:
+      print "You are not allowed to run this executable."
+      sys.exit(GSConsts.ERROR_AUTH)
 
     ## First check that we have our required environment variables
     if not "X509_USER_PROXY" in os.environ:
