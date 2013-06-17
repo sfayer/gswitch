@@ -3,7 +3,7 @@ gSwitch Readme
 
 gSwitch is an identity switching utility which uses sudo to provide the
 ultimate user switch. This avoids running any "grid" code setuid, which may be
-more desirable for sites who prefer NFS software areas. gSwitch is GPLv3
+more desirable for sites that prefer NFS software areas. gSwitch is GPLv3
 licensed, see COPYING for details.
 
 ** This tool is provided with no warranty what-so-ever, implied or otherwise. **
@@ -17,7 +17,7 @@ switch to any target account (within the same VO) by calling sudo directly. This
 is a direct limitation caused by the design (and simplicity) of this tool.
 
 Despite the above limitation, security of the pilot proxy is still ensured (as
-a user switch is completed) and traceability is maintained: Switches are logged
+a user switch is completed) and traceability is maintained: switches are logged
 by the Argus server when gSwitch is used, should sudo be called directly, a
 tamper-proof sudo log is still written (assuming sudo has been set-up as
 directed below). These logs can be used together to always ensure that an end
@@ -77,17 +77,17 @@ root    ALL=(ALL)       ALL
 
 Once this configuration is installed, you should be able to sudo directly
 between a pilot account and a user account for the same VO without a password.
-You should not be able to sudo from a target account to anywhere else, if you
-can then please reconsider your configuration. The sudoers file needs
-installing on all worker nodes through via some unspecified method (ideally a
+You should not be able to sudo from a target account to anywhere else. If you
+can then please reconsider your configuration. The sudoers file needs to be
+installed on all worker nodes through via some unspecified method (ideally a
 configuration management system).
 
 
 Installation
 ------------
 
-The installation of gSwitch itself should be fairly straight forward, on RHEL you
-need the following packages installed, they can all be found in the base repos.
+The installation of gSwitch itself should be fairly straight forward. On RHEL you
+need the following packages installed (they can all be found in the base repos):
 
 - sudo
 - openssl
