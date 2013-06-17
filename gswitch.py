@@ -346,9 +346,17 @@ class GSUtil:
   def write_proxy(target_user, proxy_templ, proxy_data, debug = False):
     """ Write a temporary proxy file as another user using sudo. """
     cmd = [ '/usr/bin/sudo', '-n', '-u', target_user, '--',
-            '/bin/sh', '-c',
-            'ID=`mktemp %s` && cat >> "${ID}" && echo "${ID}"' % proxy_templ
-          ]
+            '/bin/sh', '-c' ]
+    if "XXX" in proxy_templ:
+      # Proxy file is a mktemp template
+      cmd += [ 'ID=`/bin/mktemp %s` && /bin/cat >> "${ID}" ' \
+               '&& /bin/echo "${ID}"' % proxy_templ
+             ]
+    else:
+      # Template is actually a full path
+      cmd += [ 'ID="%s" && /bin/cat >> "${ID}" ' \
+               '&& /bin/echo "${ID}"' % proxy_templ
+             ]
     if debug:
       sys.stderr.write("%s\n" % cmd)
       return "/tmp/fake.debug.proxy.name"
