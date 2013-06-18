@@ -1,5 +1,8 @@
 v1.0.2 - Not released yet.
- - Nothing changed yet!
+ - Version command line option is now more useful.
+ - Errors are printed to stderr instead of stdout.
+ - Support for non-templated target/payload proxy names.
+ - Fix a bug that causes "No such file" almost instantly for some VOs.
 
 v1.0.1 - 17/06/2013
  - Minor fixes in the documentation.

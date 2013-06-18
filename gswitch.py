@@ -22,6 +22,7 @@
 GS_VERSION = "1.0.2a (development version)"
 
 import os
+import pwd
 import sys
 import base64
 import getopt
@@ -500,8 +501,9 @@ if __name__ == '__main__':
       sys.stderr.write("You must specify a payload command to run.\n")
       sys.exit(GSConsts.ERROR_CLIENT)
 
-    ## Before doing anything further, check the blocked user list
-    if os.getlogin() in GS_BLOCKED_USERS:
+    # Before doing anything further, check the blocked user list
+    # Use PWD & geteuid as getlogin() fails in some instances
+    if pwd.getpwuid(os.geteuid())[0] in GS_BLOCKED_USERS:
       sys.stderr.write("You are not allowed to run this executable.\n")
       sys.exit(GSConsts.ERROR_AUTH)
 
