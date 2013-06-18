@@ -19,7 +19,7 @@
 """ gSwitch - A python based identity switching utility.
 """
 
-GS_VERSION = "1.0.2a (development version)"
+GS_VERSION = "1.0.2"
 
 import os
 import pwd
