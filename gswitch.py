@@ -46,6 +46,10 @@ GS_DEF_PROXY = "/tmp/x509up_p%d.gswitch.XXXXXX" % os.getpid()
 GS_DEF_RES = "http://authz-interop.org/xacml/resource/resource-type/wn"
 # The default action (you probably don't need to change this either)
 GS_DEF_ACTION = "http://glite.org/xacml/action/execute"
+# Check we can run sudo before trying to do a real switch?
+# This can be set to true in production to "ignore" users that try to run
+# sudo when they aren't allowed to.
+GS_DEF_CHECKSUDO = True
 # Users to reject immediately, i.e. = [ "user_a", "user_b" ]
 # Note that the blocking is only advisory... They could easily circumvent it.
 # This is mainly for users who insist on running this script, but who aren't
@@ -373,6 +377,20 @@ class GSUtil:
     
 
   @staticmethod
+  def check_sudo(target_user,
+                 debug = False):
+    """ Check if sudo access to this account is allowed.
+        Returns true if it is. """
+    cmd = [ "/usr/bin/sudo", '-n', '-u', '%s' % target_user, "-l",
+            "--", "/bin/hostname" ]
+    if debug:
+      sys.stderr.write("%s\n" % cmd)
+      return True
+    p = Popen(cmd, stdout = PIPE, stdin = PIPE)
+    _ = p.communicate()
+    return (p.returncode == 0)
+
+  @staticmethod
   def run_executable(target_user,
                      exec_args,
                      background = False,
@@ -555,6 +573,12 @@ if __name__ == '__main__':
                               GS_DEF_CAPATH)
     if not target_name:
       sys.stderr.write("Authentication failed.\n")
+      sys.exit(GSConsts.ERROR_AUTH)
+
+    # Check that we can actually successfully sudo,
+    # if not, exit so we don't generate e-mail if that option is enabled
+    if GS_DEF_CHECKSUDO and (not GSUtil.check_sudo(target_name, debug)):
+      sys.stderr.write("Current user not authorised to switch account.\n")
       sys.exit(GSConsts.ERROR_AUTH)
 
     # We now have a user name, so we can attempt to copy the proxy

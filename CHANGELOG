@@ -1,5 +1,5 @@
 v1.0.3 - Not released yet.
- - Nothing changed yet!
+ - Check user can run sudo before actually attempting a switch.
 
 v1.0.2 - 18/06/2013
  - Version command line option is now more useful.
