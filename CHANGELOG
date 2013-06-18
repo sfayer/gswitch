@@ -1,3 +1,6 @@
+v1.0.3 - Not released yet.
+ - Nothing changed yet!
+
 v1.0.2 - 18/06/2013
  - Version command line option is now more useful.
  - Errors are printed to stderr instead of stdout.
