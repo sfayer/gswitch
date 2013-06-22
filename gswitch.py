@@ -28,6 +28,7 @@ import base64
 import getopt
 import pycurl
 import random
+import socket
 import struct
 import StringIO
 from subprocess import Popen, PIPE
@@ -36,7 +37,7 @@ from subprocess import Popen, PIPE
 # A list of the argus servers to authenticate with (will be used at random).
 GS_ARGUS_SERVERS = [ "https://my_argus1.domain:8154/authz",
                      "https://my_argus2.domain:8154/authz" ]
-# Number of times to retry the *whole list* of servrs.
+# Number of times to retry each server in the list.
 GS_DEF_NUM_RETRIES = 2
 # The path to get CA certs from
 GS_DEF_CAPATH = "/path/to/my/CA/certificates"
@@ -450,9 +451,11 @@ class GSArgus:
     """ Attempt a request on a collection of Argus servers until
         one is successful or the retry count is reached. """
     last_error = ""
-    for _ in range(0, num_retries):
-      random.shuffle(url_list)
-      for url in url_list:
+    # Make the choice of server deterministic for a given host
+    random.seed(socket.gethostname())
+    random.shuffle(url_list)
+    for url in url_list:
+      for _ in range(0, num_retries):
         try:
           username = GSArgus.do_lookup(url,
                                        inner_proxy,
