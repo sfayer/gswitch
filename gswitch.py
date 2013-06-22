@@ -24,6 +24,7 @@ GS_VERSION = "1.0.3a (development version)"
 import os
 import pwd
 import sys
+import time
 import base64
 import getopt
 import pycurl
@@ -465,6 +466,7 @@ class GSArgus:
           return username # Success!
         except Exception, err:
           last_error = str(err)
+          time.sleep(1) # Don't flood the server on error
     raise Exception("All attempts exhausted, last error: %s" % last_error)
 
 def print_version():

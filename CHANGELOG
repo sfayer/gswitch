@@ -1,6 +1,7 @@
 v1.0.3 - Not released yet.
  - Check user can run sudo before actually attempting a switch.
  - Made server choice deterministic based on client hostname.
+ - Delay retrying on ARGUS error to prevent flooding.
 
 v1.0.2 - 18/06/2013
  - Version command line option is now more useful.
