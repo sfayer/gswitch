@@ -1,5 +1,5 @@
 v1.0.4 - Not released yet.
- - No changes yet!
+ - Avoid calling raise to prevent the abrt process running.
 
 v1.0.3 - 27/06/2013
  - Check user can run sudo before actually attempting a switch.
