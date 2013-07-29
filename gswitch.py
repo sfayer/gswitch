@@ -619,7 +619,7 @@ if __name__ == '__main__':
     raise
   except Exception, err:
     sys.stderr.write("gSwitch error: %s\n" % str(err))
-    raise
-    # We should exit with a specific error but raise will exit for us.
-    #sys.exit(GSConsts.ERROR_CLIENT)
+    # Manually print the traceback and exit to avoid triggering abrt
+    sys.stderr.write("%s\n" % (sys.exc_info()[2]))
+    sys.exit(GSConsts.ERROR_CLIENT)
 
