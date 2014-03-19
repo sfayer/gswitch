@@ -1,3 +1,6 @@
+v1.0.5 - Not released yet
+ - Nothing Yet!
+
 v1.0.4 - 19/03/2014
  - Avoid calling raise to prevent the abrt process running.
  - Added better debug logging to syslog.
