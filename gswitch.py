@@ -14,12 +14,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # gswitch.py - A python based identity switching utility.
-# Copyright 2013, High Energy Physics, Imperial College
+# Copyright 2013-2014, High Energy Physics, Imperial College
 #
 """ gSwitch - A python based identity switching utility.
 """
 
-GS_VERSION = "1.0.4a (development version)"
+GS_VERSION = "1.0.4" # "This time it's personal"
 
 import os
 import pwd
@@ -31,6 +31,7 @@ import pycurl
 import random
 import socket
 import struct
+import syslog
 import StringIO
 from subprocess import Popen, PIPE
 
@@ -57,6 +58,11 @@ GS_DEF_CHECKSUDO = True
 # This is mainly for users who insist on running this script, but who aren't
 # in the sudoers file.
 GS_BLOCKED_USERS = [ ]
+# Enable extra debugging messages to /var/log/messages
+# These include the full command line, PID, user, CLIENT_CERT env var and
+# exit code (i.e. enough to get a good idea whether a user is doing anything
+# wrong).
+GS_DEBUG_MSG = True
 
 
 class GSConsts:
@@ -499,6 +505,11 @@ if __name__ == '__main__':
   run_background = False
   debug = False
 
+  if GS_DEBUG_MSG:
+    syslog.syslog("gSwitch[%d]: %s %s\n" % (os.getpid(),
+                                            pwd.getpwuid(os.geteuid())[0],
+                                            sys.argv))
+
   try:
     optlist, args = getopt.getopt(sys.argv[1:], 'hvVbd',
                       ['help', 'version', 'defines', 'background', 'debug'])
@@ -521,26 +532,47 @@ if __name__ == '__main__':
   # Catch any errors further down the stack
   try:
     if len(args) < 1:
+      if GS_DEBUG_MSG:
+        syslog.syslog("gSwitch[%d]: %s ERROR: No payload command.\n" % \
+                        (os.getpid(),
+                         pwd.getpwuid(os.geteuid())[0]))
       sys.stderr.write("You must specify a payload command to run.\n")
       sys.exit(GSConsts.ERROR_CLIENT)
 
     # Before doing anything further, check the blocked user list
     # Use PWD & geteuid as getlogin() fails in some instances
     if pwd.getpwuid(os.geteuid())[0] in GS_BLOCKED_USERS:
+      if GS_DEBUG_MSG:
+        syslog.syslog("gSwitch[%d]: %s ERROR: User blocked.\n" % \
+                        (os.getpid(),
+                         pwd.getpwuid(os.geteuid())[0]))
       sys.stderr.write("You are not allowed to run this executable.\n")
       sys.exit(GSConsts.ERROR_AUTH)
 
     ## First check that we have our required environment variables
     if not "X509_USER_PROXY" in os.environ:
+      if GS_DEBUG_MSG:
+        syslog.syslog("gSwitch[%d]: %s ERROR: X509_USER_PROXY unset.\n" % \
+                        (os.getpid(),
+                         pwd.getpwuid(os.geteuid())[0]))
       sys.stderr.write("X509_USER_PROXY must be set to the pilot proxy.\n")
       sys.exit(GSConsts.ERROR_CLIENT)
     if not "GLEXEC_CLIENT_CERT" in os.environ:
+      if GS_DEBUG_MSG:
+        syslog.syslog("gSwitch[%d]: %s ERROR: GLEXEC_CLIENT_CERT unset.\n" % \
+                        (os.getpid(),
+                         pwd.getpwuid(os.geteuid())[0]))
       sys.stderr.write("GLEXEC_CLIENT_CERT must be set to the " \
                        "target user proxy.\n")
       sys.exit(GSConsts.ERROR_CLIENT)
     pilot_proxy = os.path.abspath(os.environ["X509_USER_PROXY"])
     target_proxy = os.path.abspath(os.environ["GLEXEC_CLIENT_CERT"])
 
+    if GS_DEBUG_MSG:
+      syslog.syslog("gSwitch[%d]: %s Target proxy: %s\n" % \
+                      (os.getpid(),
+                       pwd.getpwuid(os.geteuid())[0],
+                       target_proxy))
     # Optional environment variables
     if not 'GLEXEC_SOURCE_PROXY' in os.environ:
       job_src_proxy = target_proxy
@@ -553,18 +585,37 @@ if __name__ == '__main__':
   
     # Now check that we can access all of the files we're going to use
     if not os.access(pilot_proxy, os.R_OK):
+      if GS_DEBUG_MSG:
+        syslog.syslog("gSwitch[%d]: %s ERROR: %s.\n" % \
+                        (os.getpid(),
+                         pwd.getpwuid(os.geteuid())[0],
+                         "X509_USER_PROXY unreadable"))
       sys.stderr.write("Cannot read X509_USER_PROXY '%s'.\n" % pilot_proxy)
       sys.exit(GSConsts.ERROR_CLIENT)
     if not os.access(target_proxy, os.R_OK):
+      if GS_DEBUG_MSG:
+        syslog.syslog("gSwitch[%d]: %s ERROR: %s.\n" % \
+                        (os.getpid(),
+                         pwd.getpwuid(os.geteuid())[0],
+                         "GLEXEC_CLIENT_CERT unreadable"))
       sys.stderr.write("Cannot read GLEXEC_CLIENT_CERT '%s'.\n" % target_proxy)
       sys.exit(GSConsts.ERROR_CLIENT)
     if not os.access(job_src_proxy, os.R_OK):
+      if GS_DEBUG_MSG:
+        syslog.syslog("gSwitch[%d]: %s ERROR: %s.\n" % \
+                        (os.getpid(),
+                         pwd.getpwuid(os.geteuid())[0],
+                         "GLEXEC_SOURCE_PROXY unreadable"))
       sys.stderr.write("Cannot read GLEXEC_SOURCE_PROXY '%s'.\n" \
                          % job_src_proxy)
       sys.exit(GSConsts.ERROR_CLIENT)
 
     # First we check the client proxy we have seems ok
     if not GSUtil.check_cert(target_proxy):
+      if GS_DEBUG_MSG:
+        syslog.syslog("gSwitch[%d]: %s ERROR: Consistency check failed.\n" % \
+                        (os.getpid(),
+                         pwd.getpwuid(os.geteuid())[0]))
       sys.stderr.write("Target proxy failed the consistency check.\n")
       sys.exit(GSConsts.ERROR_AUTH)
 
@@ -577,12 +628,20 @@ if __name__ == '__main__':
                               pilot_proxy,
                               GS_DEF_CAPATH)
     if not target_name:
+      if GS_DEBUG_MSG:
+        syslog.syslog("gSwitch[%d]: %s ERROR: Authentication failed.\n" % \
+                        (os.getpid(),
+                         pwd.getpwuid(os.geteuid())[0]))
       sys.stderr.write("Authentication failed.\n")
       sys.exit(GSConsts.ERROR_AUTH)
 
     # Check that we can actually successfully sudo,
     # if not, exit so we don't generate e-mail if that option is enabled
     if GS_DEF_CHECKSUDO and (not GSUtil.check_sudo(target_name, debug)):
+      if GS_DEBUG_MSG:
+        syslog.syslog("gSwitch[%d]: %s ERROR: User not authorised.\n" % \
+                        (os.getpid(),
+                         pwd.getpwuid(os.geteuid())[0]))
       sys.stderr.write("Current user not authorised to switch account.\n")
       sys.exit(GSConsts.ERROR_AUTH)
 
@@ -608,6 +667,11 @@ if __name__ == '__main__':
                             debug)
 
     # Finally exit with the error code
+    if GS_DEBUG_MSG:
+      syslog.syslog("gSwitch[%d]: %s Exit (Child Code: %d).\n" % \
+                      (os.getpid(),
+                       pwd.getpwuid(os.geteuid())[0],
+                       retval))
     if (retval >= GSConsts.MIN_ERROR_NO) and \
          (retval <= GSConsts.MAX_ERROR_NO):
       sys.exit(GSConsts.ERROR_CHILD_OVER)
@@ -618,6 +682,11 @@ if __name__ == '__main__':
     # Exit silently on sys.exit()
     raise
   except Exception, err:
+    if GS_DEBUG_MSG:
+      syslog.syslog("gSwitch[%d]: %s Internal error: %s.\n" % \
+                      (os.getpid(),
+                       pwd.getpwuid(os.geteuid())[0],
+                       str(err)))
     sys.stderr.write("gSwitch error: %s\n" % str(err))
     # Manually print the traceback and exit to avoid triggering abrt
     sys.stderr.write("%s\n" % (sys.exc_info()[2]))
