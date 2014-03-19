@@ -1,5 +1,9 @@
-v1.0.4 - Not released yet.
+v1.0.5 - Not released yet
+ - Nothing Yet!
+
+v1.0.4 - 19/03/2014
  - Avoid calling raise to prevent the abrt process running.
+ - Added better debug logging to syslog.
 
 v1.0.3 - 27/06/2013
  - Check user can run sudo before actually attempting a switch.
