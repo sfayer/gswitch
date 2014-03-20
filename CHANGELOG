@@ -1,5 +1,5 @@
 v1.0.5 - Not released yet
- - Nothing Yet!
+ - Clear LD_LIBRARY_PATH for the check_cert function to avoid surprises.
 
 v1.0.4 - 19/03/2014
  - Avoid calling raise to prevent the abrt process running.

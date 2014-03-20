@@ -344,6 +344,11 @@ class GSUtil:
                 "-encrypt" ]
     dec_cmd = [ "/usr/bin/openssl", "rsautl", "-inkey", cert_file,
                 "-decrypt" ]
+    # Store & Clear the LD_LIBRARY_PATH if needed
+    ld_path = None
+    if 'LD_LIBRARY_PATH' in os.environ:
+      ld_path = os.environ['LD_LIBRARY_PATH']
+      del os.environ['LD_LIBRARY_PATH']
     # Encrypt the test string
     p = Popen(enc_cmd, stdin = PIPE, stdout = PIPE, stderr = PIPE)
     p.stdin.write(test_data)
@@ -352,6 +357,9 @@ class GSUtil:
     p = Popen(dec_cmd, stdin = PIPE, stdout = PIPE, stderr = PIPE)
     p.stdin.write(encoded_data)
     output_data, _ = p.communicate()
+    # Restore the LD_LIBRARY_PATH
+    if ld_path:
+      os.environ['LD_LIBRARY_PATH'] = ld_path
     # Now check the result
     return (output_data == test_data)
 
