@@ -1,5 +1,6 @@
-v1.0.5 - Not released yet
+v1.0.5 - 20/11/2015
  - Clear LD_LIBRARY_PATH for the check_cert function to avoid surprises.
+ - Don't delete target proxy by default (for compatibility).
 
 v1.0.4 - 19/03/2014
  - Avoid calling raise to prevent the abrt process running.

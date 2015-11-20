@@ -19,7 +19,7 @@
 """ gSwitch - A python based identity switching utility.
 """
 
-GS_VERSION = "1.0.5a (development version)"
+GS_VERSION = "1.0.5"
 
 import os
 import pwd
@@ -53,6 +53,12 @@ GS_DEF_ACTION = "http://glite.org/xacml/action/execute"
 # This can be set to true in production to "ignore" users that try to run
 # sudo when they aren't allowed to.
 GS_DEF_CHECKSUDO = True
+# Originally gSwitch would tidy the target proxy it created if the job ran in
+# the foreground. This isn't how gLexec behaves (it doesn't tidy up) and this
+# can break proxy renewal on some systems (as the renewal instance of gswitch
+# removes the proxy that the main instance was using). Set this to true for the
+# old behaviour.
+GS_DEF_TIDYPROXY = False
 # Users to reject immediately, i.e. = [ "user_a", "user_b" ]
 # Note that the blocking is only advisory... They could easily circumvent it.
 # This is mainly for users who insist on running this script, but who aren't
@@ -668,7 +674,7 @@ if __name__ == '__main__':
     retval = GSUtil.run_executable(target_name, args, run_background, debug)
 
     # Attempt to delete the payload proxy
-    if not run_background:
+    if GS_DEF_TIDYPROXY and not run_background:
       GSUtil.run_executable(target_name,
                             [ '/bin/rm', '-f', new_proxy_name ],
                             False,
