@@ -1,3 +1,6 @@
+v1.0.6 - Not release yet
+ - Nothing yet!
+
 v1.0.5 - 20/11/2015
  - Clear LD_LIBRARY_PATH for the check_cert function to avoid surprises.
  - Don't delete target proxy by default (for compatibility).
