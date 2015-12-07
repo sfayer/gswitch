@@ -387,10 +387,14 @@ class GSUtil:
     if debug:
       sys.stderr.write("%s\n" % cmd)
       return "/tmp/fake.debug.proxy.name"
+    # Proxy must only be 0600
+    old_umask = os.umask(077)
     p = Popen(cmd, stdin = PIPE, stdout = PIPE, stderr = PIPE)
     p.stdin.write(proxy_data)
     proxy_file, error_msg = p.communicate()
     proxy_file = proxy_file.strip()
+    # Return umask back to what it was
+    os.umask(old_umask)
     if p.returncode:
       error_msg = error_msg.strip()
       raise Exception("Failed to write payload proxy file as %s (%s)." % \
