@@ -376,12 +376,12 @@ class GSUtil:
             '/bin/sh', '-c' ]
     if "XXX" in proxy_templ:
       # Proxy file is a mktemp template
-      cmd += [ 'ID=`/bin/mktemp %s` && /bin/cat >> "${ID}" ' \
+      cmd += [ 'ID=`/bin/mktemp %s` && /bin/cat > "${ID}" ' \
                '&& /bin/echo "${ID}"' % proxy_templ
              ]
     else:
       # Template is actually a full path
-      cmd += [ 'ID="%s" && /bin/cat >> "${ID}" ' \
+      cmd += [ 'ID="%s" && /bin/cat > "${ID}" ' \
                '&& /bin/echo "${ID}"' % proxy_templ
              ]
     if debug:
