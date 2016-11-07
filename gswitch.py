@@ -57,8 +57,14 @@ GS_DEF_CHECKSUDO = True
 # the foreground. This isn't how gLexec behaves (it doesn't tidy up) and this
 # can break proxy renewal on some systems (as the renewal instance of gswitch
 # removes the proxy that the main instance was using). Set this to true for the
-# old behaviour.
+# old behaviour. This isn't supported if fullswitch = True.
 GS_DEF_TIDYPROXY = False
+# Some processes expect not to be able to kill the child process, if they can
+# then they take this as a signal that the entire process tree has been
+# killed. We can avoid this situation by completely replacing ourselves with
+# sudo, however it means that once we've switch there is no chance to tidy
+# anything up afterwards.
+GS_DEF_FULLSWITCH = True
 # Users to reject immediately, i.e. = [ "user_a", "user_b" ]
 # Note that the blocking is only advisory... They could easily circumvent it.
 # This is mainly for users who insist on running this script, but who aren't
@@ -433,6 +439,28 @@ class GSUtil:
     p.communicate()
     return p.returncode
 
+  @staticmethod
+  def switch_executable(target_user,
+                        exec_args,
+                        background = False,
+                        debug = False):
+    """ Replace gSwitch image with sudo completely (running
+        given user command as the target user.
+        On success, does not return. """
+    cmd = '/usr/bin/sudo'
+    args = [ '/usr/bin/sudo', '-n', '-u', '%s' % target_user ]
+    if background:
+      args += [ '-b' ]
+    args += [ '--' ] + exec_args
+    if debug:
+      sys.stderr.write("%s %s\n" % (cmd, str(args)))
+      return 0
+    # Empty the python string buffers in-case execv is successful...
+    sys.stdout.flush()
+    sys.stderr.flush()
+    # Will throw an exception if there are any errors
+    os.execv(cmd, args)
+    return 0
 
 class GSArgus:
   """ A set of functions for interacting with Argus servers. """
@@ -675,7 +703,11 @@ if __name__ == '__main__':
     os.environ["X509_USER_PROXY"] = new_proxy_name
 
     # Run the real payload
-    retval = GSUtil.run_executable(target_name, args, run_background, debug)
+    if GS_DEF_FULLSWITCH:
+      retval = GSUtil.switch_executable(target_name,
+                                        args, run_background, debug)
+    else:
+      retval = GSUtil.run_executable(target_name, args, run_background, debug)
 
     # Attempt to delete the payload proxy
     if GS_DEF_TIDYPROXY and not run_background:
